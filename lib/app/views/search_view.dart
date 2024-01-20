@@ -2,10 +2,9 @@ import 'package:bot_toast/bot_toast.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:my_store/app/views/product_view.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:my_store/app/views/widget/search_product_loader_placeholder.dart';
 import '../controllers/store_controller.dart';
 import '../models/products_model.dart';
-
 
 class SearchView extends StatefulWidget {
   const SearchView({super.key});
@@ -18,7 +17,6 @@ class _SearchViewState extends State<SearchView> {
   final TextEditingController _searchTextController = TextEditingController();
   final dio = Dio();
   final StoreController _controller = StoreController();
-  final ScrollController categoriesScrollController = ScrollController();
 
   bool isLoadingProducts = false;
 
@@ -26,28 +24,17 @@ class _SearchViewState extends State<SearchView> {
   List<ProductsModel> _productsResponseList = [];
   List<ProductsModel> get productsResponseList => _productsResponseList;
 
-  void animateTo() {
-    setState(() {
-      categoriesScrollController.animateTo(
-          categoriesScrollController.position.minScrollExtent,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.ease);
-    });
-  }
-
   updateIsLoadingProducts(bool value) {
     setState(() {
       isLoadingProducts = value;
     });
   }
 
-  void getAllProducts({selectedCategory = "ALL"}) async {
+  void getAllProducts() async {
     updateIsLoadingProducts(true);
     try {
       Response response;
-      response = await dio.get(selectedCategory == "ALL"
-          ? "${_controller.baseUrl}/products"
-          : "${_controller.baseUrl}/products/category/${selectedCategory.toString().toLowerCase()}");
+      response = await dio.get("${_controller.baseUrl}/products");
       if (response.statusCode == 200) {
         final List responseList = response.data;
         _productsResponseList =
@@ -79,7 +66,7 @@ class _SearchViewState extends State<SearchView> {
     setState(() {});
   }
 
-  // initstate
+  // init state: This is the root of this view
   @override
   void initState() {
     getAllProducts();
@@ -92,122 +79,97 @@ class _SearchViewState extends State<SearchView> {
       backgroundColor: Colors.grey.shade100,
       appBar: _buildAppBar(),
       body: isLoadingProducts
-          ? ListView.builder(
-        physics: const BouncingScrollPhysics(),
-        shrinkWrap: true,
-        itemCount: 8,
-        padding: const EdgeInsets.only(
-          bottom: 10.0,
-          left: 18.0,
-          right: 18.0,
-          top: 12.0,
-        ),
-        itemBuilder: (context, index) {
-          return Shimmer.fromColors(
-            baseColor: Colors.grey.withOpacity(.1),
-            highlightColor: Colors.white60,
-            child: Container(
-              height: 76,
-              width: MediaQuery.of(context).size.width,
-              margin: const EdgeInsets.only(top: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(.7),
-                borderRadius: BorderRadius.circular(24),
-              ),
-            ),
-          );
-        },
-      )
+          ? searchProductLoaderPlaceHolder()
           : searchProductsResultList.isEmpty &&
-          _searchTextController.text.isNotEmpty
-          ? const Center(
-        child: Text(
-          "No Product Found",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.normal,
-            height: 1.25,
-          ),
-        ),
-      )
-          : ListView.builder(
-        physics: const BouncingScrollPhysics(),
-        shrinkWrap: true,
-        itemCount: searchProductsResultList.isEmpty
-            ? productsResponseList.length
-            : searchProductsResultList.length,
-        padding: const EdgeInsets.only(
-          bottom: 10.0,
-          left: 18.0,
-          right: 18.0,
-          top: 12.0,
-        ),
-        itemBuilder: (context, index) {
-          ProductsModel product = searchProductsResultList.isEmpty
-              ? productsResponseList[index]
-              : searchProductsResultList[index];
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProductView(
-                    productDetails: product,
+                  _searchTextController.text.isNotEmpty
+              ? const Center(
+                  child: Text(
+                    "No Product Found",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.normal,
+                      height: 1.25,
+                    ),
                   ),
-                ),
-              ),
-              child: Container(
-                height: 76,
-                padding: const EdgeInsets.only(
-                  left: 6.0,
-                  right: 12.0,
-                  top: 6.0,
-                  bottom: 6.0,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      height: 72,
-                      width: 72,
-                      child: Image.network(product.image),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        product.title,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.black,
+                )
+              : ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: searchProductsResultList.isEmpty
+                      ? productsResponseList.length
+                      : searchProductsResultList.length,
+                  padding: const EdgeInsets.only(
+                    bottom: 10.0,
+                    left: 18.0,
+                    right: 18.0,
+                    top: 12.0,
+                  ),
+                  itemBuilder: (context, index) {
+                    ProductsModel product = searchProductsResultList.isEmpty
+                        ? productsResponseList[index]
+                        : searchProductsResultList[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProductView(
+                              productDetails: product,
+                            ),
+                          ),
                         ),
-                        textAlign: TextAlign.start,
+                        child: Container(
+                          height: 76,
+                          padding: const EdgeInsets.only(
+                            left: 6.0,
+                            right: 12.0,
+                            top: 6.0,
+                            bottom: 6.0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                height: 72,
+                                width: 72,
+                                child: Image.network(product.image),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  product.title,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Colors.black,
+                                  ),
+                                  textAlign: TextAlign.start,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                product.price.toString(),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.black,
+                                ),
+                                textAlign: TextAlign.start,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      product.price.toString(),
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w400,
-                        color: Colors.black,
-                      ),
-                      textAlign: TextAlign.start,
-                    ),
-                  ],
+                    );
+                  },
                 ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 
