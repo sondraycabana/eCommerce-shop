@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:my_store/app/views/product_view.dart';
 import 'package:my_store/app/views/search_view.dart';
 import 'package:shimmer/shimmer.dart';
-
 import '../controllers/store_controller.dart';
 import '../models/products_model.dart';
 
